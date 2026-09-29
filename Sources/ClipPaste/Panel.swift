@@ -5,6 +5,7 @@ import Observation
 @Observable @MainActor
 final class PanelState {
     var openToken = 0   // muda a cada abertura → recria o ScrollView (volta ao início)
+    var query = ""
 }
 
 final class ClipPanel: NSPanel {
@@ -42,7 +43,8 @@ final class PanelController {
         effect.layer?.masksToBounds = true
 
         let host = NSHostingView(rootView: PanelView(store: store, state: state,
-                                                     onDragStart: { [weak self] in self?.watchDrag() }))
+                                                     onDragStart: { [weak self] in self?.watchDrag() },
+                                                     onClose: { [weak self] in self?.hide() }))
         host.translatesAutoresizingMaskIntoConstraints = false
         effect.addSubview(host)
         NSLayoutConstraint.activate([
@@ -61,6 +63,7 @@ final class PanelController {
         let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main
         guard let vf = screen?.visibleFrame else { return }
         panel.setFrame(NSRect(x: vf.minX + 8, y: vf.minY + 8, width: vf.width - 16, height: 300), display: true)
+        state.query = ""
         state.openToken += 1
         panel.orderFrontRegardless()
         panel.makeKey()
@@ -120,10 +123,21 @@ private enum Media {
 
 struct PanelView: View {
     let store: HistoryStore
-    let state: PanelState
+    @Bindable var state: PanelState
     let onDragStart: () -> Void
+    let onClose: () -> Void
+    @FocusState private var searchFocused: Bool
+
+    private var filtered: [ClipItem] {
+        let q = state.query.trimmingCharacters(in: .whitespaces)
+        guard !q.isEmpty else { return store.items }
+        return store.items.filter { $0.text?.range(of: q, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
+    }
 
     var body: some View {
+        let items = filtered
+        let pinned = items.filter(\.isPinned)
+        let recent = items.filter { !$0.isPinned }
         VStack(spacing: 10) {
             HStack {
                 Label("Área de transferência", systemImage: "clock")
@@ -133,15 +147,37 @@ struct PanelView: View {
                 Spacer()
                 Text("\(store.items.count) itens").font(.system(size: 12)).foregroundStyle(.secondary)
             }
-            if store.items.isEmpty {
-                Text("Copie algo para começar")
+            .overlay { // busca centralizada no painel
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                    TextField("Buscar", text: $state.query)
+                        .textFieldStyle(.plain)
+                        .focused($searchFocused)
+                        .onKeyPress(.escape) {
+                            if state.query.isEmpty { onClose() } else { state.query = "" }
+                            return .handled
+                        }
+                }
+                .font(.system(size: 13))
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .frame(width: 320)
+                .background(.white.opacity(0.1), in: Capsule())
+            }
+            if items.isEmpty {
+                Text(store.items.isEmpty ? "Copie algo para começar" : "Nada encontrado")
                     .font(.system(size: 15)).foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(spacing: 16) {
-                        ForEach(Array(store.items.enumerated()), id: \.element.id) { i, item in
-                            CardView(item: item, position: i + 1, blobURL: store.blobURL(for: item), onDragStart: onDragStart)
+                        ForEach(Array(pinned.enumerated()), id: \.element.id) { i, item in
+                            card(item, position: i + 1)
+                        }
+                        if !pinned.isEmpty && !recent.isEmpty {
+                            Divider().frame(height: 200)
+                        }
+                        ForEach(Array(recent.enumerated()), id: \.element.id) { i, item in
+                            card(item, position: pinned.count + i + 1)
                         }
                     }
                 }
@@ -150,6 +186,15 @@ struct PanelView: View {
         }
         .padding(.horizontal, 16).padding(.vertical, 12)
         .preferredColorScheme(.dark)
+        .onAppear { searchFocused = true }
+        .onChange(of: state.openToken) { searchFocused = true }
+    }
+
+    private func card(_ item: ClipItem, position: Int) -> some View {
+        CardView(item: item, position: position, blobURL: store.blobURL(for: item), onDragStart: onDragStart)
+            .contextMenu {
+                Button(item.isPinned ? "Desafixar" : "Fixar") { store.togglePin(item.id) }
+            }
     }
 }
 
@@ -181,7 +226,10 @@ struct CardView: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(isText ? "Texto" : "Imagem").font(.system(size: 15, weight: .bold))
+                HStack(spacing: 4) {
+                    Text(isText ? "Texto" : "Imagem").font(.system(size: 15, weight: .bold))
+                    if item.isPinned { Image(systemName: "pin.fill").font(.system(size: 11)) }
+                }
                 TimelineView(.periodic(from: .now, by: 30)) { _ in
                     Text(Self.relative.localizedString(for: item.createdAt, relativeTo: Date()))
                         .font(.system(size: 11)).opacity(0.85)

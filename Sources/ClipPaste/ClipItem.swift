@@ -13,6 +13,9 @@ struct ClipItem: Codable, Identifiable, Hashable {
     var imageWidth: Int?
     var imageHeight: Int?
     var hash: String             // SHA-256 do conteúdo (texto UTF-8 ou bytes PNG)
+    var pinned: Bool?            // opcional: index.json antigo não tem a chave
+
+    var isPinned: Bool { pinned == true }
 
     static func sha256(_ data: Data) -> String {
         SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()

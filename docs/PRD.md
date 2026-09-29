@@ -45,12 +45,14 @@ Uso **pessoal** (build local, assinatura ad-hoc). Nenhuma permissão especial do
 | F9 | Persistência entre reinicializações, **máx. 200 itens**; cópia repetida sobe para o topo |
 | F10 | Ignorar itens concealed/transient (gerenciadores de senha) |
 | F11 | Só na barra de menus (sem Dock): Mudar atalho…, Limpar histórico, Sair |
+| F12 | **Fixar** item (botão direito → Fixar/Desafixar, 📌 no card): fixados vêm primeiro na faixa, não saem pelo limite nem por "Limpar histórico" |
+| F13 | **Busca** na barra superior, com foco ao abrir; filtra texto ignorando maiúsculas/acentos; Esc limpa a busca, e com ela vazia fecha |
 
 ### 5.2 Depois do MVP
 
-- Busca; setas + Enter para colar direto (requer Acessibilidade); excluir item.
+- Setas + Enter para colar direto (requer Acessibilidade); excluir item.
 - Links e arquivos como tipos próprios.
-- Listas/Pinboards ("Sem Título" + "+").
+- Listas/Pinboards nomeados ("Sem Título" + "+").
 - Abrir no login.
 
 ### 5.3 Fora de escopo

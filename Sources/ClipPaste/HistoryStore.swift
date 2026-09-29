@@ -34,18 +34,29 @@ final class HistoryStore {
             if let pngData, let url = blobURL(for: item) { try? pngData.write(to: url, options: .atomic) }
             items.insert(item, at: 0)
         }
-        while items.count > Self.maxItems {
-            let dropped = items.removeLast()
-            if let url = blobURL(for: dropped) { try? FileManager.default.removeItem(at: url) }
+        // Fixados não contam para o limite.
+        while items.count(where: { !$0.isPinned }) > Self.maxItems,
+              let idx = items.lastIndex(where: { !$0.isPinned }) {
+            deleteBlob(of: items.remove(at: idx))
         }
         save()
     }
 
-    func clear() {
-        items = []
-        try? FileManager.default.removeItem(at: blobsDir)
-        try? FileManager.default.createDirectory(at: blobsDir, withIntermediateDirectories: true)
+    func togglePin(_ id: UUID) {
+        guard let idx = items.firstIndex(where: { $0.id == id }) else { return }
+        items[idx].pinned = !items[idx].isPinned
         save()
+    }
+
+    /// Apaga só os não fixados.
+    func clear() {
+        items.filter { !$0.isPinned }.forEach(deleteBlob)
+        items.removeAll { !$0.isPinned }
+        save()
+    }
+
+    private func deleteBlob(of item: ClipItem) {
+        if let url = blobURL(for: item) { try? FileManager.default.removeItem(at: url) }
     }
 
     private func save() {

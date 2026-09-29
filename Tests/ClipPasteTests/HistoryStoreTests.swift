@@ -51,3 +51,32 @@ struct HistoryStoreTests {
         #expect(c([]) == nil)
     }
 }
+
+@MainActor
+struct PinTests {
+    let dir = FileManager.default.temporaryDirectory.appendingPathComponent("ClipPasteTests-\(UUID().uuidString)")
+
+    @Test func pinnedSurvivesLimitAndClear() {
+        let s = HistoryStore(directory: dir)
+        s.add(.text("fixo"))
+        s.togglePin(s.items[0].id)
+        for i in 0..<HistoryStore.maxItems + 5 { s.add(.text("t\(i)")) }
+        #expect(s.items.contains { $0.text == "fixo" && $0.isPinned })
+        #expect(s.items.count == HistoryStore.maxItems + 1)
+        s.add(.text("fixo")) // dedupe mantém fixado
+        #expect(s.items.filter { $0.text == "fixo" }.count == 1 && s.items[0].isPinned)
+        s.clear()
+        #expect(s.items.map(\.text) == ["fixo"])
+        #expect(HistoryStore(directory: dir).items.map(\.isPinned) == [true])
+        try? FileManager.default.removeItem(at: dir)
+    }
+
+    @Test func oldJSONWithoutPinnedLoads() throws {
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let json = #"[{"id":"\#(UUID().uuidString)","kind":"text","createdAt":0,"text":"a","hash":"h"}]"#
+        try Data(json.utf8).write(to: dir.appendingPathComponent("index.json"))
+        let items = HistoryStore(directory: dir).items
+        #expect(items.count == 1 && !items[0].isPinned)
+        try? FileManager.default.removeItem(at: dir)
+    }
+}
