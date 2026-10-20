@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="Resources/AppIcon.png" width="128" height="128" alt="Ícone do ClipPaste">
+</p>
+
 # ClipPaste
 
 Histórico da área de transferência para macOS, nativo e leve. Escrito em Swift 6 com SwiftUI e AppKit.
@@ -168,9 +172,26 @@ Sources/ClipPaste/
 ├── HotKey.swift            # atalho global via Carbon RegisterEventHotKey
 └── Panel.swift             # NSPanel não ativável e a interface SwiftUI dos cards
 Tests/ClipPasteTests/       # testes do HistoryStore
-Resources/Info.plist        # Info.plist do bundle
-scripts/bundle.sh           # gera o ClipPaste.app
+Resources/
+├── Info.plist              # Info.plist do bundle
+├── AppIcon-source.jpg      # arte original do ícone (quadrada, sem cantos)
+├── AppIcon.png             # ícone final 1024×1024 com máscara e sombra
+└── AppIcon.icns            # ícone usado pelo app
+scripts/
+├── bundle.sh               # gera o ClipPaste.app
+├── make-icon.sh            # gera AppIcon.png e AppIcon.icns a partir da arte
+└── make_icon.swift         # aplica a máscara e a sombra do macOS na arte
 ```
+
+### Trocar o ícone
+
+Substitua `Resources/AppIcon-source.jpg` por uma arte quadrada de 1024×1024 sem cantos arredondados e rode:
+
+```bash
+./scripts/make-icon.sh
+```
+
+O script recorta a arte no formato de ícone do macOS, aplica a sombra e gera o `AppIcon.icns` com todos os tamanhos.
 
 ## Notas técnicas
 

@@ -18,5 +18,6 @@ else
 fi
 
 cp Resources/Info.plist "$APP/Contents/Info.plist"
+cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 codesign --force -s - "$APP"
 echo "OK: $APP"
