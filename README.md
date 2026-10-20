@@ -16,9 +16,10 @@ Aperte **⇧⌘V** e um painel com os itens copiados abre na parte de baixo da t
 - **Fixar itens**: clique com o botão direito em um card e escolha **Fixar**. Itens fixados aparecem primeiro e não são apagados pelo limite do histórico.
 - **Origem**: cada card mostra o ícone do app de onde o conteúdo foi copiado.
 - **Atalho configurável**: dá para trocar pelo menu da barra de status, em **Mudar atalho…**.
+- **Abre com o Mac**: com a opção **Abrir ao iniciar sessão** marcada, o app abre sozinho ao ligar ou reiniciar o Mac.
 - **Privacidade**: ignora conteúdo marcado como sensível ou temporário (por exemplo, senhas de gerenciadores) e tudo fica salvo só no seu Mac.
 - **Nenhuma permissão necessária**: não pede Acessibilidade nem qualquer outra autorização do sistema.
-- **Zero dependências**: usa só AppKit, SwiftUI, Carbon e Foundation.
+- **Zero dependências**: usa só frameworks do sistema (AppKit, SwiftUI, Carbon, ServiceManagement e Foundation).
 
 ## Instalação
 
@@ -79,11 +80,13 @@ Um app compilado na sua própria máquina não fica em quarentena, então não p
 - Copie algo (⌘C) e aperte **⇧⌘V**: o painel com o histórico abre na parte de baixo da tela.
 - Nenhuma permissão é pedida. Se o macOS pedir alguma, não é do ClipPaste.
 
-### Abrir automaticamente ao ligar o Mac
+### Abrir automaticamente ao ligar ou reiniciar o Mac
 
-1. Abra **Ajustes do Sistema → Geral → Itens de Início**.
-2. Em **Abrir ao Iniciar Sessão**, clique em **+**.
-3. Escolha **ClipPaste** na pasta Aplicativos e clique em **Abrir**.
+Clique no ícone do ClipPaste na barra de menus e marque **Abrir ao iniciar sessão**. A partir daí o app abre sozinho sempre que o Mac ligar, reiniciar ou você entrar na sua conta. Para desligar, desmarque a mesma opção.
+
+- O macOS mostra uma notificação avisando que um item de início foi adicionado. Isso é normal.
+- A opção também aparece em **Ajustes do Sistema → Geral → Itens de Início**. Se você desativar o ClipPaste por lá, o menu mostra **(desativado nos Ajustes)…** e, ao clicar, abre essa tela para você reativar.
+- Funciona com o app instalado (`ClipPaste.app`), de preferência na pasta Aplicativos. Não funciona rodando com `swift run`.
 
 ### Atualizar
 
@@ -94,8 +97,8 @@ O histórico é mantido, porque ele fica salvo fora do app.
 
 ### Desinstalar
 
-1. Feche o ClipPaste: ícone na barra de menus → **Sair**.
-2. Se tiver adicionado, remova-o de **Ajustes do Sistema → Geral → Itens de Início**.
+1. Se tiver ativado, desmarque **Abrir ao iniciar sessão** no menu do ClipPaste.
+2. Feche o ClipPaste: ícone na barra de menus → **Sair**.
 3. Apague o app e o histórico:
 
    ```bash
@@ -147,6 +150,7 @@ Ele roda os testes, gera o app com a versão da tag aplicada no `Info.plist` e c
 | Limpar a busca / fechar | **Esc** |
 | Fixar / desafixar | Botão direito no card → **Fixar** |
 | Trocar o atalho | Menu da barra de status → **Mudar atalho…** |
+| Abrir junto com o Mac | Menu da barra de status → **Abrir ao iniciar sessão** |
 | Apagar o histórico | Menu da barra de status → **Limpar histórico** |
 
 ## Armazenamento
@@ -170,6 +174,7 @@ Sources/ClipPaste/
 ├── HistoryStore.swift      # histórico, persistência e limite de itens
 ├── ClipItem.swift          # modelo de um item (texto/imagem)
 ├── HotKey.swift            # atalho global via Carbon RegisterEventHotKey
+├── LaunchAtLogin.swift     # abrir ao iniciar sessão via SMAppService
 └── Panel.swift             # NSPanel não ativável e a interface SwiftUI dos cards
 Tests/ClipPasteTests/       # testes do HistoryStore
 Resources/

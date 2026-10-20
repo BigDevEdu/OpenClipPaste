@@ -15,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var hotKey: HotKey!
     private var statusItem: NSStatusItem!
     private var openItem: NSMenuItem!
+    private var loginItem: NSMenuItem!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -34,6 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.delegate = self
         openItem = menu.addItem(withTitle: "Abrir", action: #selector(openPanel), keyEquivalent: "")
         menu.addItem(withTitle: "Mudar atalho…", action: #selector(changeShortcut), keyEquivalent: "")
+        loginItem = menu.addItem(withTitle: "Abrir ao iniciar sessão", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
         menu.addItem(withTitle: "Limpar histórico", action: #selector(clearHistory), keyEquivalent: "")
         menu.addItem(.separator())
         menu.addItem(withTitle: "Sair", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
@@ -41,9 +43,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem.menu = menu
     }
 
-    func menuNeedsUpdate(_ menu: NSMenu) { openItem.title = "Abrir (\(hotKey.display))" }
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        openItem.title = "Abrir (\(hotKey.display))"
+        // Reflete o estado real (o usuário pode mudar nos Ajustes do Sistema a qualquer momento).
+        loginItem.state = LaunchAtLogin.isEnabled ? .on : .off
+        loginItem.title = LaunchAtLogin.requiresApproval
+            ? "Abrir ao iniciar sessão (desativado nos Ajustes)…"
+            : "Abrir ao iniciar sessão"
+    }
 
     @objc private func openPanel() { panel.toggle() }
     @objc private func changeShortcut() { hotKey.promptForNewShortcut() }
+    @objc private func toggleLaunchAtLogin() { LaunchAtLogin.toggle() }
     @objc private func clearHistory() { store.clear() }
 }
