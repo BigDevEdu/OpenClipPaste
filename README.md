@@ -16,20 +16,90 @@ Aperte **⇧⌘V** e um painel com os itens copiados abre na parte de baixo da t
 - **Nenhuma permissão necessária**: não pede Acessibilidade nem qualquer outra autorização do sistema.
 - **Zero dependências**: usa só AppKit, SwiftUI, Carbon e Foundation.
 
-## Download
+## Instalação
 
-Baixe o `ClipPaste-<versão>-macos-arm64.zip` na página de [Releases](https://github.com/BigDevEdu/OpenClipPaste/releases), descompacte e mova o `ClipPaste.app` para `/Applications`.
+**Requisitos:** macOS 14 (Sonoma) ou posterior e um Mac com Apple Silicon (M1 ou mais novo).
 
-> [!NOTE]
-> O app tem só assinatura ad-hoc e não é notarizado pela Apple, então o macOS bloqueia a primeira abertura. Para liberar, rode:
->
-> ```bash
-> xattr -dr com.apple.quarantine /Applications/ClipPaste.app
-> ```
->
-> Ou clique com o botão direito no app → **Abrir**.
+### Opção 1: baixar o app (recomendado)
 
-## Requisitos
+1. Abra a página de [Releases](https://github.com/BigDevEdu/OpenClipPaste/releases/latest) e baixe o arquivo `ClipPaste-<versão>-macos-arm64.zip`.
+2. Dê dois cliques no `.zip` para descompactar. O macOS cria o `ClipPaste.app`.
+3. Arraste o `ClipPaste.app` para a pasta **Aplicativos** (`/Applications`).
+4. Libere o app no Gatekeeper (veja abaixo). Isso só é preciso na primeira vez.
+5. Abra o ClipPaste pela pasta Aplicativos, pelo Launchpad ou pelo Spotlight (⌘ Espaço → "ClipPaste").
+
+#### Liberar o app na primeira abertura
+
+O ClipPaste não é notarizado pela Apple, então na primeira abertura o macOS avisa que não pode verificar o desenvolvedor. Escolha **uma** das formas abaixo para liberar:
+
+- **Pelo Terminal** (mais rápido):
+
+  ```bash
+  xattr -dr com.apple.quarantine /Applications/ClipPaste.app
+  ```
+
+- **Pelos Ajustes do Sistema**: tente abrir o app uma vez e feche o aviso. Depois vá em **Ajustes do Sistema → Privacidade e Segurança**, role até o fim e clique em **Abrir Mesmo Assim** ao lado de "ClipPaste". Confirme com sua senha.
+- **No macOS 14 (Sonoma)** também funciona clicar com o botão direito no app → **Abrir** → **Abrir**.
+
+### Opção 2: instalar pelo Terminal
+
+Baixa a versão mais recente, instala em `/Applications` e já libera o app:
+
+```bash
+URL=$(curl -fsSL https://api.github.com/repos/BigDevEdu/OpenClipPaste/releases/latest \
+  | grep -o '"browser_download_url": *"[^"]*\.zip"' | cut -d '"' -f4)
+curl -fL "$URL" -o /tmp/ClipPaste.zip
+ditto -x -k /tmp/ClipPaste.zip /Applications
+xattr -dr com.apple.quarantine /Applications/ClipPaste.app
+rm /tmp/ClipPaste.zip
+open /Applications/ClipPaste.app
+```
+
+### Opção 3: compilar a partir do código
+
+Precisa das Command Line Tools (`xcode-select --install`).
+
+```bash
+git clone https://github.com/BigDevEdu/OpenClipPaste.git
+cd OpenClipPaste
+./scripts/bundle.sh
+cp -R build/ClipPaste.app /Applications/
+open /Applications/ClipPaste.app
+```
+
+Um app compilado na sua própria máquina não fica em quarentena, então não precisa liberar no Gatekeeper.
+
+### Primeiro uso
+
+- O ClipPaste não abre janela nem aparece no Dock. Um ícone de **prancheta** aparece na barra de menus, perto do relógio.
+- Copie algo (⌘C) e aperte **⇧⌘V**: o painel com o histórico abre na parte de baixo da tela.
+- Nenhuma permissão é pedida. Se o macOS pedir alguma, não é do ClipPaste.
+
+### Abrir automaticamente ao ligar o Mac
+
+1. Abra **Ajustes do Sistema → Geral → Itens de Início**.
+2. Em **Abrir ao Iniciar Sessão**, clique em **+**.
+3. Escolha **ClipPaste** na pasta Aplicativos e clique em **Abrir**.
+
+### Atualizar
+
+1. Feche o ClipPaste: ícone na barra de menus → **Sair**.
+2. Repita a instalação (Opção 1, 2 ou 3) e substitua o app antigo em Aplicativos.
+
+O histórico é mantido, porque ele fica salvo fora do app.
+
+### Desinstalar
+
+1. Feche o ClipPaste: ícone na barra de menus → **Sair**.
+2. Se tiver adicionado, remova-o de **Ajustes do Sistema → Geral → Itens de Início**.
+3. Apague o app e o histórico:
+
+   ```bash
+   rm -rf /Applications/ClipPaste.app
+   rm -rf ~/Library/Application\ Support/ClipPaste
+   ```
+
+## Desenvolvimento
 
 - macOS 14 (Sonoma) ou posterior
 - Swift 6: basta ter as Command Line Tools instaladas (`xcode-select --install`). O Xcode não é necessário.
