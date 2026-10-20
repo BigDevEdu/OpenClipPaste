@@ -1,0 +1,95 @@
+# Gera o ClipPaste.app e publica um GitHub Release.
+#
+# - Push de tag `v*` (ex.: v1.0.0): testa, gera o app e cria o Release com o .zip anexado.
+# - Execução manual (workflow_dispatch): testa e gera o app, mas só sobe o .zip como
+#   artefato da execução, sem criar Release.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write # necessário para `gh release create`
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build & Release (macOS arm64)
+    runs-on: macos-15 # Apple Silicon + Xcode 16 (Swift 6)
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+          swift --version
+
+      - name: Definir versão
+        id: version
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="0.0.0-dev.${GITHUB_RUN_NUMBER}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Versão: $VERSION (build $GITHUB_RUN_NUMBER)"
+
+      - name: Testes
+        run: swift test
+
+      - name: Build release
+        # Roda explicitamente para que erros de compilação apareçam no log
+        # (o bundle.sh silencia o stderr do swift build).
+        run: swift build -c release
+
+      - name: Aplicar versão no Info.plist
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" Resources/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $GITHUB_RUN_NUMBER" Resources/Info.plist
+
+      - name: Gerar ClipPaste.app
+        run: ./scripts/bundle.sh
+
+      - name: Empacotar
+        id: package
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          ZIP="ClipPaste-${VERSION}-macos-arm64.zip"
+          # ditto preserva symlinks, atributos estendidos e a assinatura do bundle.
+          ditto -c -k --sequesterRsrc --keepParent build/ClipPaste.app "$ZIP"
+          shasum -a 256 "$ZIP" > "$ZIP.sha256"
+          cat "$ZIP.sha256"
+          echo "zip=$ZIP" >> "$GITHUB_OUTPUT"
+
+      - name: Upload do artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.package.outputs.zip }}
+          path: |
+            ${{ steps.package.outputs.zip }}
+            ${{ steps.package.outputs.zip }}.sha256
+          if-no-files-found: error
+
+      - name: Criar GitHub Release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ZIP: ${{ steps.package.outputs.zip }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "$ZIP" "$ZIP.sha256" \
+            --title "ClipPaste $GITHUB_REF_NAME" \
+            --generate-notes \
+            --verify-tag

@@ -16,6 +16,19 @@ Aperte **⇧⌘V** e um painel com os itens copiados abre na parte de baixo da t
 - **Nenhuma permissão necessária**: não pede Acessibilidade nem qualquer outra autorização do sistema.
 - **Zero dependências**: usa só AppKit, SwiftUI, Carbon e Foundation.
 
+## Download
+
+Baixe o `ClipPaste-<versão>-macos-arm64.zip` na página de [Releases](https://github.com/BigDevEdu/OpenClipPaste/releases), descompacte e mova o `ClipPaste.app` para `/Applications`.
+
+> [!NOTE]
+> O app tem só assinatura ad-hoc e não é notarizado pela Apple, então o macOS bloqueia a primeira abertura. Para liberar, rode:
+>
+> ```bash
+> xattr -dr com.apple.quarantine /Applications/ClipPaste.app
+> ```
+>
+> Ou clique com o botão direito no app → **Abrir**.
+
 ## Requisitos
 
 - macOS 14 (Sonoma) ou posterior
@@ -38,6 +51,17 @@ swift test           # roda os testes
 Isso gera `build/ClipPaste.app`: build de release para arm64, com assinatura ad-hoc. Para instalar, mova o app para `/Applications`.
 
 > O ClipPaste roda como app de barra de menus (`LSUIElement`). Ele não aparece no Dock, só como ícone de prancheta na barra de status.
+
+### Publicar uma release
+
+O workflow [`release.yml`](.github/workflows/release.yml) roda sozinho quando uma tag `v*` é enviada:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+Ele roda os testes, gera o app com a versão da tag aplicada no `Info.plist` e cria o GitHub Release com o `.zip` e o checksum SHA-256 anexados. Também dá para rodar manualmente pela aba **Actions**: nesse caso ele só gera o `.zip` como artefato da execução, sem criar release.
 
 ## Uso
 
